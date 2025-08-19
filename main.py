@@ -13,9 +13,9 @@ app = FastAPI(title="Healthcare Predictor API", version="1.0.0")
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://www.samkaram.net", "https://samkaram.net", "http://localhost:3000"],
-    allow_credentials=True,
-    allow_methods=["GET", "POST"],
+    allow_origins=["*"],  # Allow all origins for now
+    allow_credentials=False,  # Set to False when using allow_origins=["*"]
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
