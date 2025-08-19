@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import pandas as pd
 import joblib
 import os
+import requests
 from typing import Optional
 
 # Create FastAPI app
@@ -27,20 +28,46 @@ FEATURES = [
     'Medication_Ibuprofen', 'Medication_Lipitor', 'Medication_Paracetamol', 'Medication_Penicillin'
 ]
 
-# Load model (we'll handle this in deployment)
+# Model URL - you'll need to replace this with your actual download URL
+MODEL_URL = "https://github.com/yourusername/healthcare-analytics-app/releases/download/v1.0/healthcare_model.joblib"
+# Or use Google Drive: "https://drive.google.com/uc?id=YOUR_FILE_ID&export=download"
+
+# Global model variable
 model = None
+
+def download_model():
+    """Download model file if it doesn't exist locally"""
+    model_path = "healthcare_model.joblib"
+    
+    if not os.path.exists(model_path):
+        print("📥 Downloading model file...")
+        try:
+            response = requests.get(MODEL_URL, stream=True)
+            response.raise_for_status()
+            
+            with open(model_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            
+            print("✅ Model downloaded successfully!")
+        except Exception as e:
+            print(f"❌ Error downloading model: {e}")
+            raise e
+    else:
+        print("✅ Model file already exists")
+    
+    return model_path
 
 def load_model():
     global model
     if model is None:
         try:
-            # Try to load the model file
-            if os.path.exists('healthcare_model.joblib'):
-                model = joblib.load('healthcare_model.joblib')
-                print("✅ Model loaded successfully!")
-            else:
-                print("❌ Model file not found!")
-                raise FileNotFoundError("Model file not found")
+            # Download model if needed
+            model_path = download_model()
+            
+            # Load the model
+            model = joblib.load(model_path)
+            print("✅ Model loaded successfully!")
         except Exception as e:
             print(f"❌ Error loading model: {e}")
             raise e
@@ -96,6 +123,15 @@ def prepare_prediction_data(request: PredictionRequest):
     
     return input_df
 
+@app.on_event("startup")
+async def startup_event():
+    """Load model on startup"""
+    try:
+        load_model()
+        print("🚀 API started successfully!")
+    except Exception as e:
+        print(f"⚠️ Warning: Could not load model on startup: {e}")
+
 @app.get("/")
 async def root():
     """Health check endpoint"""
@@ -134,11 +170,6 @@ async def predict(request: PredictionRequest):
             inputs=request.dict()
         )
         
-    except FileNotFoundError:
-        raise HTTPException(
-            status_code=503, 
-            detail="Model not available. Please contact administrator."
-        )
     except Exception as e:
         raise HTTPException(
             status_code=500, 
