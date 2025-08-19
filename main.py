@@ -29,7 +29,7 @@ FEATURES = [
 ]
 
 # Model URL - you'll need to replace this with your actual download URL
-MODEL_URL = "https://github.com/yourusername/healthcare-analytics-app/releases/download/v1.0/healthcare_model.joblib"
+MODEL_URL = "https://github.com/samkaram/healthcare-analytics-app/releases/download/v1.0/healthcare_model.joblib"
 # Or use Google Drive: "https://drive.google.com/uc?id=YOUR_FILE_ID&export=download"
 
 # Global model variable
